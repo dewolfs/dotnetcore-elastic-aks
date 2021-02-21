@@ -1,0 +1,19 @@
+apiVersion: apm.k8s.elastic.co/v1
+kind: ApmServer
+metadata:
+  name: apmserver
+  namespace: elastic-system
+spec:
+  version: 7.11.0
+  count: 1
+  http:
+    tls:
+      selfSignedCertificate:
+        disabled: true
+    service:
+      spec:
+        type: LoadBalancer
+  elasticsearchRef:
+    name: elasticsearch
+  kibanaRef:
+    name: kibana

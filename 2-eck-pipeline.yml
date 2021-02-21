@@ -1,0 +1,80 @@
+# create a unique name based on your project requirements
+name: $(TeamProject)_$(Build.DefinitionName)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
+
+trigger: none
+
+resources:
+- repo: self
+
+# global variables
+variables:
+  vmImageName: 'ubuntu-latest'
+  kubernetesServiceEndpoint: 'cluster-conn'
+  
+stages:
+- stage: Install_Operator
+  displayName: Install Elastic Cloud Operator
+  jobs:
+    - deployment: Operator
+      pool:
+        vmImage: $(vmImageName)
+      environment: prod
+      strategy:
+       runOnce:
+         deploy:
+           steps:
+              - checkout: self
+              - task: Kubernetes@1
+                displayName: Install Elastic Cloud Operator'
+                inputs:
+                  connectionType: 'Kubernetes Service Connection'
+                  kubernetesServiceEndpoint: $(kubernetesServiceEndpoint)
+                  command: 'apply'
+                  arguments: '-f https://download.elastic.co/downloads/eck/1.4.0/all-in-one.yaml'
+- stage: Release
+  displayName: Release stage
+  jobs:
+    - deployment: DeployECK
+      pool:
+        vmImage: $(vmImageName)
+      environment: prod
+      strategy:
+       runOnce:
+         deploy:
+           steps:
+              - checkout: self
+              - task: Kubernetes@1
+                displayName: Deploy Elasticsearch
+                inputs:
+                  connectionType: 'Kubernetes Service Connection'
+                  kubernetesServiceEndpoint: 'cluster-conn'
+                  command: 'apply'
+                  arguments: '-f manifests/eck-elasticsearch.yaml'
+              - task: Kubernetes@1
+                displayName: Deploy Kibana
+                inputs:
+                  connectionType: 'Kubernetes Service Connection'
+                  kubernetesServiceEndpoint: 'cluster-conn'
+                  command: 'apply'
+                  arguments: '-f manifests/eck-kibana.yaml'
+              - task: Kubernetes@1
+                displayName: Deploy Apmserver
+                inputs:
+                  connectionType: 'Kubernetes Service Connection'
+                  kubernetesServiceEndpoint: 'cluster-conn'
+                  command: 'apply'
+                  arguments: '-f manifests/eck-apmserver.yaml'
+              - task: Kubernetes@1
+                displayName: Deploy Filebeat
+                inputs:
+                  connectionType: 'Kubernetes Service Connection'
+                  kubernetesServiceEndpoint: 'cluster-conn'
+                  command: 'apply'
+                  arguments: '-f manifests/eck-filebeat.yaml'
+              - task: Kubernetes@1
+                displayName: Deploy Metricbeat
+                inputs:
+                  connectionType: 'Kubernetes Service Connection'
+                  kubernetesServiceEndpoint: 'cluster-conn'
+                  command: 'apply'
+                  arguments: '-f manifests/eck-metricbeat.yaml'

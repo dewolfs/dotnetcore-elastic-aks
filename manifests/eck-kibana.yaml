@@ -1,0 +1,14 @@
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: kibana
+  namespace: elastic-system
+spec:
+  version: 7.11.0
+  http:
+    service:
+      spec:
+        type: LoadBalancer
+  count: 1
+  elasticsearchRef:
+    name: elasticsearch
